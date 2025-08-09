@@ -226,7 +226,7 @@ GameObject:
   - component: {fileID: 5194773945828422722}
   - component: {fileID: 8057218257806933067}
   m_Layer: 5
-  m_Name: BugReport
+  m_Name: TaskNameInput
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -483,13 +483,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 50
-  m_fontSizeBase: 50
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 0
   m_fontSizeMax: 0
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -536,9 +536,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6502822897291712152}
-  - component: {fileID: 6062314428669610493}
   m_Layer: 5
-  m_Name: Bug
+  m_Name: Task
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -566,19 +565,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 1200, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &6062314428669610493
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3567421264355902935}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7e3bf9cdcdf3d36459bb9a21d9fa696d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _this: {fileID: 3567421264355902935}
 --- !u!1 &4409136203662321447
 GameObject:
   m_ObjectHideFlags: 0
@@ -729,7 +715,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -986,7 +972,7 @@ GameObject:
   - component: {fileID: 528732544597689482}
   - component: {fileID: 8959179065410757971}
   m_Layer: 5
-  m_Name: Urgency
+  m_Name: UrgencyDropdown
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1106,7 +1092,7 @@ MonoBehaviour:
     - m_Text: Idea
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
-    - m_Text: Optional
+    - m_Text: Feature
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 0.8780921, b: 0, a: 1}
     - m_Text: Bug
@@ -1215,8 +1201,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 60
-  m_fontSizeBase: 60
+  m_fontSize: 32
+  m_fontSizeBase: 32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 0
@@ -1645,19 +1631,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1345525943654191889}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 6062314428669610493}
-        m_TargetAssemblyTypeName: Bug, Assembly-CSharp
-        m_MethodName: DeleteBug
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &7452690537200118313
 GameObject:
   m_ObjectHideFlags: 0
