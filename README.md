@@ -17,7 +17,7 @@ Buggy is a tool designed to help software and game developers manage their proje
    git clone https://github.com/AYNSJC/Buggy.git
    ```
 2. **Open in Unity:**  
-   Open the project folder with Unity Hub (recommended Unity version: [insert your version here]).
+   Open the project folder with Unity Hub (recommended Unity version: Unity 6.1).
 
 3. **Play and Explore:**  
    Enter Play mode in Unity to start using Buggy and manage your tasks.
