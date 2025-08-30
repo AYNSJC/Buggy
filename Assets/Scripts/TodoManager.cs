@@ -41,7 +41,7 @@ public class TodoManager : MonoBehaviour {
     // Drag and drop variables
     private bool isDragging = false;
     private GameObject draggedObject = null;
-    private Vector3 originalPosition;
+    private Vector3 dragStartPosition;
     private Transform originalParent;
     private int originalSiblingIndex;
 
@@ -54,29 +54,6 @@ public class TodoManager : MonoBehaviour {
 
         addGroupButton.onClick.AddListener(AddGroup);
         addTaskButton.onClick.AddListener(AddTask);
-
-        // Add cursor change for buttons
-        AddCursorChangeToButton(addGroupButton);
-        AddCursorChangeToButton(addTaskButton);
-    }
-
-    private void AddCursorChangeToButton(Button button) {
-        EventTrigger trigger = button.gameObject.GetComponent<EventTrigger>();
-        if(trigger == null) {
-            trigger = button.gameObject.AddComponent<EventTrigger>();
-        }
-
-        // Mouse enter event
-        EventTrigger.Entry enterEntry = new EventTrigger.Entry();
-        enterEntry.eventID = EventTriggerType.PointerEnter;
-        enterEntry.callback.AddListener((data) => { Cursor.SetCursor(null, Vector2.zero, CursorMode.ForceSoftware); });
-        trigger.triggers.Add(enterEntry);
-
-        // Mouse exit event
-        EventTrigger.Entry exitEntry = new EventTrigger.Entry();
-        exitEntry.eventID = EventTriggerType.PointerExit;
-        exitEntry.callback.AddListener((data) => { Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto); });
-        trigger.triggers.Add(exitEntry);
     }
 
     private void AddGroup() {
@@ -180,7 +157,7 @@ public class TodoManager : MonoBehaviour {
     public void OnGroupDragStart(GameObject draggedGroup, int groupIndex) {
         isDragging = true;
         draggedObject = draggedGroup;
-        originalPosition = draggedGroup.transform.position;
+        dragStartPosition = draggedGroup.transform.position;
         originalParent = draggedGroup.transform.parent;
         originalSiblingIndex = draggedGroup.transform.GetSiblingIndex();
 
@@ -188,41 +165,21 @@ public class TodoManager : MonoBehaviour {
         CanvasGroup canvasGroup = draggedGroup.GetComponent<CanvasGroup>();
         if(canvasGroup == null) canvasGroup = draggedGroup.AddComponent<CanvasGroup>();
         canvasGroup.alpha = 0.6f;
+
+        // Bring to front for better visual feedback
+        draggedGroup.transform.SetAsLastSibling();
     }
 
     public void OnGroupDrag(GameObject draggedGroup, Vector3 position) {
-        // Get original index from the drag handler
-        GroupDragHandler handler = draggedGroup.GetComponent<GroupDragHandler>();
-        int originalIndex = handler.groupIndex;
-        bool isLastGroup = (originalIndex == groups.Count - 1);
+        // Update visual position
+        draggedGroup.transform.position = position;
 
-        if(isLastGroup) {
-            // For last group, heavily restrict movement - only allow position swapping with second-to-last
-            int currentSiblingIndex = draggedGroup.transform.GetSiblingIndex();
-            Vector3 currentPosition = groupListContent.GetChild(originalIndex).position;
+        // Find the closest drop position based on cursor location
+        int closestIndex = GetClosestGroupIndex(position);
 
-            float dragDistance = position.y - currentPosition.y;
-            float moveThreshold = 80f; // Higher threshold for last item
-
-            if(dragDistance > moveThreshold && groups.Count > 1) {
-                // Can only move to second-to-last position
-                draggedGroup.transform.SetSiblingIndex(groups.Count - 2);
-            }
-            else if(dragDistance <= moveThreshold || currentSiblingIndex != groups.Count - 1) {
-                // Snap back to last position
-                draggedGroup.transform.SetSiblingIndex(groups.Count - 1);
-            }
-        }
-        else {
-            // Normal drag behavior for non-last items
-            draggedGroup.transform.position = position;
-
-            int currentIndex = draggedGroup.transform.GetSiblingIndex();
-            int targetIndex = GetAdjacentGroupIndex(position, currentIndex);
-
-            if(targetIndex != -1 && targetIndex != currentIndex) {
-                draggedGroup.transform.SetSiblingIndex(targetIndex);
-            }
+        // Update sibling index for visual feedback
+        if(closestIndex >= 0 && closestIndex != draggedGroup.transform.GetSiblingIndex()) {
+            draggedGroup.transform.SetSiblingIndex(closestIndex);
         }
     }
 
@@ -233,45 +190,40 @@ public class TodoManager : MonoBehaviour {
         CanvasGroup canvasGroup = draggedGroup.GetComponent<CanvasGroup>();
         if(canvasGroup != null) canvasGroup.alpha = 1f;
 
-        int newIndex = draggedGroup.transform.GetSiblingIndex();
+        // Find where to drop based on final cursor position
+        int targetIndex = GetClosestGroupIndex(draggedGroup.transform.position);
 
-        // Extra protection for last group - force it to valid position
-        bool wasLastGroup = (originalGroupIndex == groups.Count - 1);
-        if(wasLastGroup) {
-            // Last group can only be in last position or second-to-last position
-            if(newIndex < groups.Count - 2) {
-                newIndex = groups.Count - 1; // Force back to last position
-                draggedGroup.transform.SetSiblingIndex(newIndex);
-            }
+        if(targetIndex < 0) {
+            // No valid drop position, return to original
+            targetIndex = originalGroupIndex;
         }
 
-        // Only proceed with data reordering if there was actually a valid change
-        if(newIndex != originalSiblingIndex && newIndex != originalGroupIndex) {
+        // Set the final sibling index
+        draggedGroup.transform.SetSiblingIndex(targetIndex);
+
+        // Snap to proper grid position
+        LayoutRebuilder.ForceRebuildLayoutImmediate(groupListContent as RectTransform);
+
+        // Only proceed with data reordering if there was actually a change
+        if(targetIndex != originalGroupIndex) {
             // Reorder the groups data
             GroupData movedGroup = groups[originalGroupIndex];
             groups.RemoveAt(originalGroupIndex);
-
-            // Ensure we don't insert beyond bounds
-            newIndex = Mathf.Clamp(newIndex, 0, groups.Count);
-            groups.Insert(newIndex, movedGroup);
+            groups.Insert(targetIndex, movedGroup);
 
             // Update current group index if needed
             if(currentGroupIndex == originalGroupIndex) {
-                currentGroupIndex = newIndex;
+                currentGroupIndex = targetIndex;
             }
-            else if(currentGroupIndex > originalGroupIndex && currentGroupIndex <= newIndex) {
+            else if(currentGroupIndex > originalGroupIndex && currentGroupIndex <= targetIndex) {
                 currentGroupIndex--;
             }
-            else if(currentGroupIndex < originalGroupIndex && currentGroupIndex >= newIndex) {
+            else if(currentGroupIndex < originalGroupIndex && currentGroupIndex >= targetIndex) {
                 currentGroupIndex++;
             }
 
             SaveData();
             RefreshGroupUI();
-        }
-        else {
-            // Force back to original/valid position
-            draggedGroup.transform.SetSiblingIndex(originalSiblingIndex);
         }
 
         draggedObject = null;
@@ -280,7 +232,7 @@ public class TodoManager : MonoBehaviour {
     public void OnTaskDragStart(GameObject draggedTask, int taskIndex) {
         isDragging = true;
         draggedObject = draggedTask;
-        originalPosition = draggedTask.transform.position;
+        dragStartPosition = draggedTask.transform.position;
         originalParent = draggedTask.transform.parent;
         originalSiblingIndex = draggedTask.transform.GetSiblingIndex();
 
@@ -288,41 +240,23 @@ public class TodoManager : MonoBehaviour {
         CanvasGroup canvasGroup = draggedTask.GetComponent<CanvasGroup>();
         if(canvasGroup == null) canvasGroup = draggedTask.AddComponent<CanvasGroup>();
         canvasGroup.alpha = 0.6f;
+
+        // Bring to front for better visual feedback
+        draggedTask.transform.SetAsLastSibling();
     }
 
     public void OnTaskDrag(GameObject draggedTask, Vector3 position) {
-        // Get original index from the drag handler
-        TaskDragHandler handler = draggedTask.GetComponent<TaskDragHandler>();
-        int originalIndex = handler.taskIndex;
-        bool isLastTask = (currentGroupIndex >= 0 && originalIndex == groups[currentGroupIndex].tasks.Count - 1);
+        // Update visual position
+        draggedTask.transform.position = position;
 
-        if(isLastTask && currentGroupIndex >= 0) {
-            // For last task, heavily restrict movement - only allow position swapping with second-to-last
-            int currentSiblingIndex = draggedTask.transform.GetSiblingIndex();
-            Vector3 currentPosition = taskListContent.GetChild(originalIndex).position;
+        if(currentGroupIndex < 0) return;
 
-            float dragDistance = position.y - currentPosition.y;
-            float moveThreshold = 80f; // Higher threshold for last item
+        // Find the closest drop position based on cursor location
+        int closestIndex = GetClosestTaskIndex(position);
 
-            if(dragDistance > moveThreshold && groups[currentGroupIndex].tasks.Count > 1) {
-                // Can only move to second-to-last position
-                draggedTask.transform.SetSiblingIndex(groups[currentGroupIndex].tasks.Count - 2);
-            }
-            else if(dragDistance <= moveThreshold || currentSiblingIndex != groups[currentGroupIndex].tasks.Count - 1) {
-                // Snap back to last position
-                draggedTask.transform.SetSiblingIndex(groups[currentGroupIndex].tasks.Count - 1);
-            }
-        }
-        else {
-            // Normal drag behavior for non-last items
-            draggedTask.transform.position = position;
-
-            int currentIndex = draggedTask.transform.GetSiblingIndex();
-            int targetIndex = GetAdjacentTaskIndex(position, currentIndex);
-
-            if(targetIndex != -1 && targetIndex != currentIndex) {
-                draggedTask.transform.SetSiblingIndex(targetIndex);
-            }
+        // Update sibling index for visual feedback
+        if(closestIndex >= 0 && closestIndex != draggedTask.transform.GetSiblingIndex()) {
+            draggedTask.transform.SetSiblingIndex(closestIndex);
         }
     }
 
@@ -333,112 +267,100 @@ public class TodoManager : MonoBehaviour {
         CanvasGroup canvasGroup = draggedTask.GetComponent<CanvasGroup>();
         if(canvasGroup != null) canvasGroup.alpha = 1f;
 
-        int newIndex = draggedTask.transform.GetSiblingIndex();
-
-        // Extra protection for last task - force it to valid position
-        bool wasLastTask = (currentGroupIndex >= 0 && originalTaskIndex == groups[currentGroupIndex].tasks.Count - 1);
-        if(wasLastTask && currentGroupIndex >= 0) {
-            // Last task can only be in last position or second-to-last position
-            if(newIndex < groups[currentGroupIndex].tasks.Count - 2) {
-                newIndex = groups[currentGroupIndex].tasks.Count - 1; // Force back to last position
-                draggedTask.transform.SetSiblingIndex(newIndex);
-            }
+        if(currentGroupIndex < 0) {
+            draggedObject = null;
+            return;
         }
 
-        // Only proceed with data reordering if there was actually a valid change
-        if(newIndex != originalSiblingIndex && currentGroupIndex >= 0 && newIndex != originalTaskIndex) {
+        // Find where to drop based on final cursor position
+        int targetIndex = GetClosestTaskIndex(draggedTask.transform.position);
+
+        if(targetIndex < 0) {
+            // No valid drop position, return to original
+            targetIndex = originalTaskIndex;
+        }
+
+        // Set the final sibling index
+        draggedTask.transform.SetSiblingIndex(targetIndex);
+
+        // Snap to proper grid position
+        LayoutRebuilder.ForceRebuildLayoutImmediate(taskListContent as RectTransform);
+
+        // Only proceed with data reordering if there was actually a change
+        if(targetIndex != originalTaskIndex) {
             // Reorder the tasks data
             TaskData movedTask = groups[currentGroupIndex].tasks[originalTaskIndex];
             groups[currentGroupIndex].tasks.RemoveAt(originalTaskIndex);
-
-            // Ensure we don't insert beyond bounds
-            newIndex = Mathf.Clamp(newIndex, 0, groups[currentGroupIndex].tasks.Count);
-            groups[currentGroupIndex].tasks.Insert(newIndex, movedTask);
+            groups[currentGroupIndex].tasks.Insert(targetIndex, movedTask);
 
             SaveData();
             RefreshTaskUI();
-        }
-        else {
-            // Force back to original/valid position
-            draggedTask.transform.SetSiblingIndex(originalSiblingIndex);
         }
 
         draggedObject = null;
     }
 
-    private int GetAdjacentGroupIndex(Vector3 dragPosition, int currentIndex) {
-        if(groupListContent.childCount <= 1) return -1;
+    // NEW METHOD: Find closest group index based on cursor position
+    private int GetClosestGroupIndex(Vector3 dragPosition) {
+        if(groupListContent.childCount == 0) return -1;
 
-        // Special handling for last group
-        bool isLastGroup = (currentIndex == groups.Count - 1);
+        float closestDistance = float.MaxValue;
+        int closestIndex = -1;
 
-        // Get the current item's position
-        Vector3 currentPosition = groupListContent.GetChild(currentIndex).position;
+        for(int i = 0; i < groupListContent.childCount; i++) {
+            Transform child = groupListContent.GetChild(i);
+            if(child.gameObject == draggedObject) continue; // Skip the dragged object itself
 
-        // Calculate drag distance (positive = dragging up, negative = dragging down)
-        float dragDistance = dragPosition.y - currentPosition.y;
-
-        // Only move if dragged far enough (threshold to prevent jittery movement)
-        float moveThreshold = 50f;
-
-        if(dragDistance > moveThreshold && currentIndex > 0) {
-            // Dragging up, move to previous position
-            int targetIndex = currentIndex - 1;
-            // Extra validation for last group
-            if(isLastGroup) {
-                targetIndex = Mathf.Clamp(targetIndex, 0, groups.Count - 2);
+            float distance = Vector3.Distance(dragPosition, child.position);
+            if(distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = i;
             }
-            return targetIndex;
-        }
-        else if(dragDistance < -moveThreshold && currentIndex < groupListContent.childCount - 1) {
-            // Dragging down, move to next position
-            int targetIndex = currentIndex + 1;
-            // Extra validation for last group (it can't move further down if it's already last)
-            if(isLastGroup) {
-                return currentIndex; // Last group can't move down
-            }
-            return Mathf.Clamp(targetIndex, 0, groups.Count - 1);
         }
 
-        return currentIndex; // No change
+        // If we're dragging past the last item, place at the end
+        if(closestIndex >= 0) {
+            Transform closestChild = groupListContent.GetChild(closestIndex);
+            if(dragPosition.y < closestChild.position.y) {
+                // Below the closest item, so place after it
+                closestIndex = Mathf.Min(closestIndex + 1, groups.Count - 1);
+            }
+        }
+
+        return closestIndex;
     }
 
-    private int GetAdjacentTaskIndex(Vector3 dragPosition, int currentIndex) {
-        if(taskListContent.childCount <= 1 || currentGroupIndex < 0) return -1;
+    // NEW METHOD: Find closest task index based on cursor position
+    private int GetClosestTaskIndex(Vector3 dragPosition) {
+        if(taskListContent.childCount == 0 || currentGroupIndex < 0) return -1;
 
-        // Special handling for last task
-        bool isLastTask = (currentIndex == groups[currentGroupIndex].tasks.Count - 1);
+        float closestDistance = float.MaxValue;
+        int closestIndex = -1;
 
-        // Get the current item's position
-        Vector3 currentPosition = taskListContent.GetChild(currentIndex).position;
+        for(int i = 0; i < taskListContent.childCount; i++) {
+            Transform child = taskListContent.GetChild(i);
+            if(child.gameObject == draggedObject) continue; // Skip the dragged object itself
 
-        // Calculate drag distance (positive = dragging up, negative = dragging down)
-        float dragDistance = dragPosition.y - currentPosition.y;
-
-        // Only move if dragged far enough (threshold to prevent jittery movement)
-        float moveThreshold = 50f;
-
-        if(dragDistance > moveThreshold && currentIndex > 0) {
-            // Dragging up, move to previous position
-            int targetIndex = currentIndex - 1;
-            // Extra validation for last task
-            if(isLastTask) {
-                targetIndex = Mathf.Clamp(targetIndex, 0, groups[currentGroupIndex].tasks.Count - 2);
+            float distance = Vector3.Distance(dragPosition, child.position);
+            if(distance < closestDistance) {
+                closestDistance = distance;
+                closestIndex = i;
             }
-            return targetIndex;
-        }
-        else if(dragDistance < -moveThreshold && currentIndex < taskListContent.childCount - 1) {
-            // Dragging down, move to next position
-            int targetIndex = currentIndex + 1;
-            // Extra validation for last task (it can't move further down if it's already last)
-            if(isLastTask) {
-                return currentIndex; // Last task can't move down
-            }
-            return Mathf.Clamp(targetIndex, 0, groups[currentGroupIndex].tasks.Count - 1);
         }
 
-        return currentIndex; // No change
+        // If we're dragging past the last item, place at the end
+        if(closestIndex >= 0) {
+            Transform closestChild = taskListContent.GetChild(closestIndex);
+            if(dragPosition.y < closestChild.position.y) {
+                // Below the closest item, so place after it
+                closestIndex = Mathf.Min(closestIndex + 1, groups[currentGroupIndex].tasks.Count - 1);
+            }
+        }
+
+        return closestIndex;
     }
+
+    // REMOVED: GetAdjacentGroupIndex and GetAdjacentTaskIndex methods (no longer needed)
 
     private void OpenGroup(int index) {
         currentGroupIndex = index;
@@ -525,7 +447,6 @@ public class GroupDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, 
 
     public void OnBeginDrag(PointerEventData eventData) {
         todoManager.OnGroupDragStart(gameObject, groupIndex);
-        transform.SetAsLastSibling(); // Bring to front
     }
 
     public void OnDrag(PointerEventData eventData) {
@@ -558,7 +479,6 @@ public class TaskDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnBeginDrag(PointerEventData eventData) {
         todoManager.OnTaskDragStart(gameObject, taskIndex);
-        transform.SetAsLastSibling(); // Bring to front
     }
 
     public void OnDrag(PointerEventData eventData) {
