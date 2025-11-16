@@ -2202,6 +2202,7 @@ GameObject:
   - component: {fileID: 1789952015999665156}
   - component: {fileID: 1345525943654191889}
   - component: {fileID: 2458118134257273480}
+  - component: {fileID: 2275252506097971694}
   m_Layer: 5
   m_Name: DeleteButton
   m_TagString: Untagged
@@ -2226,7 +2227,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: 300, y: 0}
-  m_SizeDelta: {x: 80, y: 80}
+  m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1789952015999665156
 CanvasRenderer:
@@ -2310,6 +2311,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2275252506097971694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7115827522887341679}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56ab570f613b4484db381283ad8d23f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeleteButtonUIManager
+  _darkUIButtonSprite: {fileID: 21300000, guid: a4243a7685b7daf4fa30505c759b227a, type: 3}
+  _lightUIButtonSprite: {fileID: 8132107293079887100, guid: 0e6fbab81c6ff8f49a2ce2467e7c66e7, type: 3}
 --- !u!1 &7452690537200118313
 GameObject:
   m_ObjectHideFlags: 0

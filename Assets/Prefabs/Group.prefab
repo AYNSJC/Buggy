@@ -259,6 +259,7 @@ GameObject:
   - component: {fileID: 1508328055183016835}
   - component: {fileID: 4123390671839928031}
   - component: {fileID: 5215282673175824865}
+  - component: {fileID: 2633235139693533911}
   m_Layer: 5
   m_Name: DeleteButton
   m_TagString: Untagged
@@ -367,6 +368,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2633235139693533911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3947352398910432799}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56ab570f613b4484db381283ad8d23f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeleteButtonUIManager
+  _darkUIButtonSprite: {fileID: 21300000, guid: a4243a7685b7daf4fa30505c759b227a, type: 3}
+  _lightUIButtonSprite: {fileID: 8132107293079887100, guid: 0e6fbab81c6ff8f49a2ce2467e7c66e7, type: 3}
 --- !u!1 &4891978522715526374
 GameObject:
   m_ObjectHideFlags: 0

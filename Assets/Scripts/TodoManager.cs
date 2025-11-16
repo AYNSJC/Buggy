@@ -48,7 +48,6 @@ public class TodoManager : MonoBehaviour {
 	private int currentGroupIndex = -1;
 
 	// Drag and drop variables
-	private bool isDragging = false;
 	private GameObject draggedObject = null;
 	private Vector3 dragStartPosition;
 	private Transform originalParent;
@@ -265,7 +264,6 @@ public class TodoManager : MonoBehaviour {
 	}
 
 	public void OnGroupDragStart(GameObject draggedGroup, int groupIndex) {
-		isDragging = true;
 		draggedObject = draggedGroup;
 		dragStartPosition = draggedGroup.transform.position;
 		originalParent = draggedGroup.transform.parent;
@@ -293,8 +291,6 @@ public class TodoManager : MonoBehaviour {
 	}
 
 	public void OnGroupDragEnd(GameObject draggedGroup, int originalGroupIndex) {
-		isDragging = false;
-
 		CanvasGroup canvasGroup = draggedGroup.GetComponent<CanvasGroup>();
 		if(canvasGroup != null) canvasGroup.alpha = 1f;
 
@@ -330,7 +326,6 @@ public class TodoManager : MonoBehaviour {
 	}
 
 	public void OnTaskDragStart(GameObject draggedTask, int taskIndex) {
-		isDragging = true;
 		draggedObject = draggedTask;
 		dragStartPosition = draggedTask.transform.position;
 		originalParent = draggedTask.transform.parent;
@@ -360,8 +355,6 @@ public class TodoManager : MonoBehaviour {
 	}
 
 	public void OnTaskDragEnd(GameObject draggedTask, int originalTaskIndex) {
-		isDragging = false;
-
 		CanvasGroup canvasGroup = draggedTask.GetComponent<CanvasGroup>();
 		if(canvasGroup != null) canvasGroup.alpha = 1f;
 

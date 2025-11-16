@@ -1,8 +1,9 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour {
-	[SerializeField] private bool _darkTheme;
+	public static bool _darkTheme = true;
 
 	[SerializeField] private Image _bg;
 	[SerializeField] private Image _panel;
